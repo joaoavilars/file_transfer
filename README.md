@@ -38,13 +38,13 @@ JWT (JSON Web Tokens) para gerenciamento de sessões.
 Siga os passos abaixo para configurar e executar a aplicação no seu ambiente.
 
 Pré-requisitos
-Docker: Instruções de instalação
+Docker
 
-Docker Compose: Instruções de instalação
+Docker Compose
 
 1. Clone este repositório
-git clone <url-do-seu-repositorio>
-cd <nome-do-repositorio>
+git clone https://github.com/joaoavilars/file_transfer.git
+cd file_transfer
 
 2. Gere um Hash para sua Senha
 Nunca armazene senhas em texto puro. Use o comando Docker abaixo para gerar um hash seguro para a senha que você deseja usar.
