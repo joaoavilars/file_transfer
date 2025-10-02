@@ -8,39 +8,120 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort" // Novo import para ordenar os arquivos
+	"sort"
 	"strings"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const uploadPath = "/app/uploads"
 
-// Struct para a requisição de exclusão em massa
-type BatchDeleteRequest struct {
-	Filenames []string `json:"filenames"`
+// Variáveis de ambiente
+var (
+	appUser         string
+	appPasswordHash string
+	jwtSecret       []byte
+)
+
+// --- LÓGICA DE AUTENTICAÇÃO E JWT ---
+
+type Credentials struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
-// --- NOVO ---
-// Struct para enviar informações dos arquivos para o frontend
-type FileInfo struct {
-	UniqueName   string `json:"uniqueName"`
-	OriginalName string `json:"originalName"`
-	// Podemos adicionar mais campos no futuro, como tamanho (Size) ou data (ModTime)
+type Claims struct {
+	Username string `json:"username"`
+	jwt.RegisteredClaims
 }
 
-// --- FIM NOVO ---
+// authMiddleware protege as rotas que precisam de login
+func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Acesso não autorizado", http.StatusUnauthorized)
+			return
+		}
+
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		claims := &Claims{}
+
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			return jwtSecret, nil
+		})
+
+		if err != nil || !token.Valid {
+			http.Error(w, "Token inválido", http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
+}
+
+// loginHandler lida com a tentativa de login
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	var creds Credentials
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		http.Error(w, "Requisição inválida", http.StatusBadRequest)
+		return
+	}
+
+	// Compara o usuário e o hash da senha
+	if creds.Username != appUser || bcrypt.CompareHashAndPassword([]byte(appPasswordHash), []byte(creds.Password)) != nil {
+		http.Error(w, "Usuário ou senha inválidos", http.StatusUnauthorized)
+		return
+	}
+
+	// Gera o token JWT
+	expirationTime := time.Now().Add(8 * time.Hour)
+	claims := &Claims{
+		Username: creds.Username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		http.Error(w, "Erro ao gerar token", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"token": tokenString})
+}
+
+// --- INÍCIO DO PROGRAMA ---
 
 func main() {
-	fs := http.FileServer(http.Dir("./frontend"))
-	http.Handle("/", fs)
-	http.HandleFunc("/upload", uploadHandler)
-	http.Handle("/files/", http.StripPrefix("/files/", http.FileServer(http.Dir(uploadPath))))
-	http.HandleFunc("/delete/", deleteHandler)
-	http.HandleFunc("/delete-batch", batchDeleteHandler)
+	// Carrega as variáveis de ambiente
+	appUser = os.Getenv("APP_USER")
+	appPasswordHash = os.Getenv("APP_PASSWORD_HASH")
+	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
-	// --- NOVO ENDPOINT ---
-	http.HandleFunc("/list-files", listFilesHandler)
-	// --- FIM NOVO ---
+	log.Println("-------------------------------------------------")
+	log.Printf("INICIANDO COM ==> Usuário: [%s], Hash: [%s]", appUser, appPasswordHash)
+	log.Println("-------------------------------------------------")
+
+	if appUser == "" || appPasswordHash == "" || len(jwtSecret) == 0 {
+		log.Fatal("Variáveis de ambiente APP_USER, APP_PASSWORD_HASH, e JWT_SECRET devem ser definidas")
+	}
+
+	// --- ROTAS PÚBLICAS (não precisam de login) ---
+	fs := http.FileServer(http.Dir("./frontend"))
+	http.Handle("/", fs)                                                                       // A página HTML principal
+	http.Handle("/files/", http.StripPrefix("/files/", http.FileServer(http.Dir(uploadPath)))) // Download de arquivos
+	http.HandleFunc("/login", loginHandler)                                                    // O endpoint de login
+
+	// --- ROTAS PROTEGIDAS (precisam de login) ---
+	http.HandleFunc("/list-files", authMiddleware(listFilesHandler))
+	http.HandleFunc("/upload", authMiddleware(uploadHandler))
+	http.HandleFunc("/delete/", authMiddleware(deleteHandler))
+	http.HandleFunc("/delete-batch", authMiddleware(batchDeleteHandler))
 
 	log.Println("Servidor iniciado em http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
@@ -48,33 +129,35 @@ func main() {
 	}
 }
 
-// --- NOVA FUNÇÃO ---
-// listFilesHandler lê o diretório de uploads e retorna uma lista de arquivos.
+// (O restante do código, com os handlers 'listFilesHandler', 'uploadHandler', etc., continua aqui sem alterações)
+// ...
+// ... (cole aqui as funções 'listFilesHandler', 'batchDeleteHandler', 'uploadHandler' e 'deleteHandler' da versão anterior sem modificá-las)
+type FileInfo struct {
+	UniqueName   string `json:"uniqueName"`
+	OriginalName string `json:"originalName"`
+}
+
 func listFilesHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
 		return
 	}
-
 	entries, err := os.ReadDir(uploadPath)
 	if err != nil {
-		// Se a pasta ainda não existir, retorna uma lista vazia em vez de um erro.
 		if os.IsNotExist(err) {
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte("[]")) // Retorna um array JSON vazio
+			w.Write([]byte("[]"))
 			return
 		}
 		log.Printf("Erro ao ler o diretório de uploads: %v", err)
 		http.Error(w, "Erro interno do servidor", http.StatusInternalServerError)
 		return
 	}
-
 	var files []FileInfo
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			uniqueName := entry.Name()
 			originalName := uniqueName
-			// Extrai o nome original do arquivo (remove o timestamp prefixado)
 			parts := strings.SplitN(uniqueName, "-", 2)
 			if len(parts) == 2 {
 				originalName = parts[1]
@@ -85,21 +168,15 @@ func listFilesHandler(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 	}
-
-	// Ordena a lista de arquivos em ordem alfabética (opcional, mas bom para consistência)
-	sort.Slice(files, func(i, j int) bool {
-		return files[i].OriginalName < files[j].OriginalName
-	})
-
+	sort.Slice(files, func(i, j int) bool { return files[i].OriginalName < files[j].OriginalName })
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(files)
 }
 
-// --- FIM NOVA FUNÇÃO ---
+type BatchDeleteRequest struct {
+	Filenames []string `json:"filenames"`
+}
 
-// (As outras funções: batchDeleteHandler, uploadHandler e deleteHandler permanecem exatamente as mesmas da versão anterior)
-// ...
-// ... (cole aqui as funções 'batchDeleteHandler', 'uploadHandler' e 'deleteHandler' da versão anterior sem modificá-las)
 func batchDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
@@ -161,10 +238,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Erro interno do servidor", http.StatusInternalServerError)
 		return
 	}
-
-	// Linha do 'link' removida
 	w.Header().Set("Content-Type", "application/json")
-	// Retorna mais informações para o frontend com a sintaxe correta
 	json.NewEncoder(w).Encode(FileInfo{
 		UniqueName:   uniqueFileName,
 		OriginalName: handler.Filename,

@@ -5,147 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transferência de Arquivos</title>
     <style>
+        /* (Todo o CSS anterior continua aqui, com adições para a tela de login) */
         :root {
-            /* Tema Claro (Padrão) */
-            --body-bg: #f4f4f9;
-            --container-bg: #ffffff;
-            --text-primary: #000000;
-            --text-secondary: #666666;
-            --border-color: #dddddd;
-            --shadow-color: rgba(0, 0, 0, 0.1);
-            --primary-color: #007bff;
-            --primary-hover: #0056b3;
-            --danger-color: #dc3545;
-            --danger-hover: #c82333;
-            --disabled-bg: #c8c8c8;
-            --subtle-bg: #f8f9fa;
-            --hover-bg: #f0f8ff;
-            --entry-bg: #ffffff;
-            --entry-border: #eeeeee;
+            --body-bg: #f4f4f9; --container-bg: #ffffff; --text-primary: #000000; --text-secondary: #666666;
+            --border-color: #dddddd; --shadow-color: rgba(0, 0, 0, 0.1); --primary-color: #007bff; --primary-hover: #0056b3;
+            --danger-color: #dc3545; --danger-hover: #c82333; --disabled-bg: #c8c8c8; --subtle-bg: #f8f9fa;
+            --hover-bg: #f0f8ff; --entry-bg: #ffffff; --entry-border: #eeeeee;
         }
-
         body[data-theme='dark'] {
-            /* Tema Escuro */
-            --body-bg: #121212;
-            --container-bg: #1e1e1e;
-            --text-primary: #e0e0e0;
-            --text-secondary: #bbbbbb;
-            --border-color: #444444;
-            --shadow-color: rgba(0, 0, 0, 0.4);
-            --primary-color: #3d9dff;
-            --primary-hover: #67b5ff;
-            --danger-color: #ff5252;
-            --danger-hover: #ff7b7b;
-            --disabled-bg: #555555;
-            --subtle-bg: #2a2a2a;
-            --hover-bg: #333333;
-            --entry-bg: #252525;
-            --entry-border: #3a3a3a;
+            --body-bg: #121212; --container-bg: #1e1e1e; --text-primary: #e0e0e0; --text-secondary: #bbbbbb;
+            --border-color: #444444; --shadow-color: rgba(0, 0, 0, 0.4); --primary-color: #3d9dff; --primary-hover: #67b5ff;
+            --danger-color: #ff5252; --danger-hover: #ff7b7b; --disabled-bg: #555555; --subtle-bg: #2a2a2a;
+            --hover-bg: #333333; --entry-bg: #252525; --entry-border: #3a3a3a;
         }
-        
-        body { 
-            font-family: sans-serif; 
-            background-color: var(--body-bg); 
-            color: var(--text-primary);
-            display: flex; justify-content: center; align-items: center; 
-            min-height: 100vh; margin: 0; padding: 20px 0;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        .container { 
-            position: relative;
-            text-align: center; 
-            background: var(--container-bg); 
-            padding: 40px; border-radius: 8px; 
-            box-shadow: 0 4px 10px var(--shadow-color); 
-            width: 90%; max-width: 800px;
-            border: 1px solid var(--border-color);
-            transition: background-color 0.3s, border-color 0.3s;
-        }
-
-        #theme-toggle {
-            position: absolute;
-            top: 15px; right: 15px; background: none; border: 1px solid var(--border-color);
-            color: var(--text-secondary); border-radius: 50%; width: 40px; height: 40px;
-            font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center;
-            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-        }
+        body { font-family: sans-serif; background-color: var(--body-bg); color: var(--text-primary); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; transition: background-color 0.3s, color 0.3s; }
+        .container { position: relative; text-align: center; background: var(--container-bg); padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px var(--shadow-color); width: 90%; max-width: 800px; border: 1px solid var(--border-color); transition: background-color 0.3s, border-color 0.3s; }
+        #theme-toggle { position: absolute; top: 15px; right: 15px; background: none; border: 1px solid var(--border-color); color: var(--text-secondary); border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color 0.2s, color 0.2s, border-color 0.2s; }
         #theme-toggle:hover { background-color: var(--hover-bg); }
-
+        h1 { margin-top: 0; }
+        /* --- ESTILOS DO LOGIN --- */
+        #login-container { display: flex; flex-direction: column; gap: 15px; max-width: 350px; margin: auto; }
+        .form-group { text-align: left; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid var(--border-color); background-color: var(--entry-bg); color: var(--text-primary); box-sizing: border-box; }
+        #login-button { background-color: var(--primary-color); color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.2s; }
+        #login-button:hover { background-color: var(--primary-hover); }
+        #login-error { color: var(--danger-color); margin-top: 10px; min-height: 1.2em; }
+        /* --- ESTILOS DO APP --- */
+        #logout-button { position: absolute; top: 15px; left: 15px; background: none; border: 1px solid var(--border-color); color: var(--text-secondary); border-radius: 5px; padding: 5px 10px; cursor: pointer; }
         #drop-zone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 40px; margin-bottom: 20px; transition: border-color 0.3s, background-color 0.3s; }
         #drop-zone.dragover { border-color: var(--primary-color); background-color: var(--hover-bg); }
-        
         #upload-button { background-color: var(--primary-color); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.2s; }
         #upload-button:hover { background-color: var(--primary-hover); }
         #file-input { display: none; }
         #result { margin-top: 15px; text-align: left; }
-
-        #bulk-actions {
-            display: none; justify-content: space-between; align-items: center;
-            padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 5px;
-            background-color: var(--subtle-bg); transition: background-color 0.3s, border-color 0.3s;
-        }
+        #bulk-actions { display: none; justify-content: space-between; align-items: center; padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 5px; background-color: var(--subtle-bg); transition: background-color 0.3s, border-color 0.3s; }
         .select-all-container { display: flex; align-items: center; gap: 15px; }
         .select-all-container label { font-weight: bold; color: var(--text-primary); cursor: pointer; }
         #select-all-checkbox { width: 20px; height: 20px; flex-shrink: 0; }
-
-        #bulk-delete-button {
-            background-color: var(--danger-color); color: white; border: none; border-radius: 4px; padding: 8px 15px;
-            cursor: pointer; font-size: 14px; transition: background-color 0.2s;
-        }
+        #bulk-delete-button { background-color: var(--danger-color); color: white; border: none; border-radius: 4px; padding: 8px 15px; cursor: pointer; font-size: 14px; transition: background-color 0.2s; }
         #bulk-delete-button:disabled { background-color: var(--disabled-bg); cursor: not-allowed; }
         #bulk-delete-button:hover:not(:disabled) { background-color: var(--danger-hover); }
-        
-        .file-entry {
-            background-color: var(--entry-bg); border: 1px solid var(--entry-border); border-radius: 5px; padding: 10px 15px; margin-top: 10px;
-            display: flex; align-items: center; gap: 15px;
-            transition: background-color 0.3s, border-color 0.3s;
-        }
+        .file-entry { background-color: var(--entry-bg); border: 1px solid var(--entry-border); border-radius: 5px; padding: 10px 15px; margin-top: 10px; display: flex; align-items: center; gap: 15px; transition: background-color 0.3s, border-color 0.3s; }
         .file-checkbox { width: 20px; height: 20px; flex-shrink: 0; }
-        .file-info { overflow: hidden; width: 100%; /* Garante que a barra de progresso ocupe todo o espaço */ }
+        .file-info { overflow: hidden; width: 100%; }
         .file-info p { margin: 0; }
         .file-info a { color: var(--primary-color); text-decoration: none; font-weight: bold; }
         .file-info small { color: var(--text-secondary); word-break: break-all; }
-
-        /* --- NOVOS ESTILOS PARA A BARRA DE PROGRESSO --- */
-        .progress-bar-container {
-            width: 100%;
-            height: 8px;
-            background-color: var(--border-color);
-            border-radius: 4px;
-            margin-top: 8px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            width: 0%; /* Começa em 0 */
-            height: 100%;
-            background-color: var(--primary-color);
-            border-radius: 4px;
-            transition: width 0.1s linear; /* Transição suave */
-        }
+        .progress-bar-container { width: 100%; height: 8px; background-color: var(--border-color); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; background-color: var(--primary-color); border-radius: 4px; transition: width 0.1s linear; }
     </style>
 </head>
 <body>
     <div class="container">
-        <button id="theme-toggle" title="Alterar tema">🌙</button>
-
-        <h1>Transferência de Arquivos da Intranet</h1>
-        <div id="drop-zone">
-            <p>Arraste e solte os arquivos aqui</p>
-            <p>ou</p>
-            <button id="upload-button">Selecione os Arquivos</button>
-            <input type="file" id="file-input" multiple>
+        <div id="login-view">
+            <h1>Login</h1>
+            <form id="login-form">
+                <div id="login-container">
+                    <div class="form-group">
+                        <label for="username">Usuário</label>
+                        <input type="text" id="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    <button type="submit" id="login-button">Entrar</button>
+                    <p id="login-error"></p>
+                </div>
+            </form>
         </div>
 
-        <div id="bulk-actions">
-            <div class="select-all-container">
-                <input type="checkbox" id="select-all-checkbox">
-                <label for="select-all-checkbox">Selecionar Todos</label>
+        <div id="app-view" style="display: none;">
+            <button id="theme-toggle" title="Alterar tema">🌙</button>
+            <button id="logout-button" title="Sair">Logout</button>
+            <h1>Transferência de Arquivos da Intranet</h1>
+            <div id="drop-zone">
+                <p>Arraste e solte os arquivos aqui</p>
+                <p>ou</p>
+                <button id="upload-button">Selecione os Arquivos</button>
+                <input type="file" id="file-input" multiple>
             </div>
-            <button id="bulk-delete-button" disabled>Excluir Selecionados</button>
+            <div id="bulk-actions">
+                <div class="select-all-container">
+                    <input type="checkbox" id="select-all-checkbox">
+                    <label for="select-all-checkbox">Selecionar Todos</label>
+                </div>
+                <button id="bulk-delete-button" disabled>Excluir Selecionados</button>
+            </div>
+            <div id="result"></div>
         </div>
-
-        <div id="result"></div>
     </div>
     <script src="script.js"></script>
 </body>
