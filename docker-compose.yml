@@ -1,0 +1,17 @@
+
+services:
+  file-transfer-intranet:
+    # Constrói a imagem a partir do Dockerfile no diretório atual (.)
+    build: .
+    # Nome do container para fácil identificação
+    container_name: file_transfer_service
+    # Mapeia a porta 8080 do container para a porta 8080 do seu computador
+    ports:
+      - "8080:8080"
+    # O ponto mais importante: persistência dos dados!
+    # Mapeia o diretório 'uploads' local para o diretório '/app/uploads' dentro do container.
+    # Assim, os arquivos não se perdem se o container for reiniciado.
+    volumes:
+      - ./uploads:/app/uploads
+    # Reinicia o container automaticamente a menos que ele seja parado manualmente
+    restart: unless-stopped
